@@ -1,19 +1,58 @@
 apply plugin: 'com.android.application'
 
+
+def gitVersionCode() {
+    def cmd = 'git rev-list HEAD --first-parent --count'
+    //+600是为了控制超过原来的老版工程的累加数值
+    cmd.execute().text.trim().toInteger() + 600
+}
+
+def gitVersionTag() {
+    def cmd = 'git describe --tags'
+    def version = cmd.execute().text.trim()
+
+    def pattern = "-(\\d+)-g"
+    def matcher = version =~ pattern
+
+    if (matcher) {
+        version = version.substring(0, matcher.start()) //+ "." + matcher[0][1]
+    } else {
+        version = version //+ ".0"
+    }
+
+    return version
+}
+
 android {
     compileSdkVersion 24
     buildToolsVersion "24.0.2"
+    lintOptions {
+        ignoreWarnings true
+        abortOnError false
+        checkAllWarnings false
+        checkReleaseBuilds false
+    }
     defaultConfig {
         applicationId "com.haonight.www.map2history"
         minSdkVersion 15
         targetSdkVersion 24
-        versionCode 1
-        versionName "1.0"
+        versionCode gitVersionCode()
+        versionName gitVersionTag()
         testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
         release {
             minifyEnabled false
+            // 移除无用的resource文件
+            shrinkResources false
+            debuggable false
+            zipAlignEnabled true
+            signingConfig signingConfigs.debug
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
+            signingConfig signingConfigs.debug
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
